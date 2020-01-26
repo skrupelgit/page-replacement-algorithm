@@ -38,7 +38,7 @@
                         </label>
                         <label>
                             Reloj
-                            <input disabled class="form-control" v-model="method" type="radio" name="method"
+                            <input class="form-control"  v-model="method" type="radio" name="method"
                                    value="clock"/>
                         </label>
                     </div>
@@ -73,7 +73,7 @@
 
         <div v-if="results.resultTable.length" class="card">
             <div class="card-body">
-                <table class>
+                <table v-if="resultsMethod!=='clock'" class>
                     <tr v-for="(frame,index) in new Array(nFrames)" :key="'fr'+index">
                         <td>
                             <span class="badge badge-dark">{{index}}</span>
@@ -83,6 +83,23 @@
                       :style="{backgroundColor:getPageColor(result[index])}"
                       class="badge"
               >{{result[index]}}</span>
+                        </td>
+                    </tr>
+                </table>
+                <table v-else class>
+                    <tr v-for="(frame,index) in new Array(nFrames)" :key="'fr'+index">
+                        <td>
+                            <span class="badge badge-dark">{{index}}</span>
+                        </td>
+                        <td v-for="(result, resultIndex) in results.resultTable" :key="'tb'+resultIndex">
+                            <span
+                                    :style="{backgroundColor:getPageColor(result.pages[index].value)}"
+                                    class="badge">
+                                                            <span v-if="result.pointer===index">-></span>
+
+                  {{result.pages[index].value}}<span
+                                    v-if="result.pages[index].reference">*</span>
+              </span>
                         </td>
                     </tr>
                 </table>
@@ -97,6 +114,8 @@
 </template>
 
 <script>
+    import lodashCloneDeep from "lodash.clonedeep"
+
     export default {
         name: "HelloWorld",
         props: {},
@@ -105,6 +124,7 @@
                 nFrames: null,
                 rawPageList: null,
                 method: 'fifo',
+                resultsMethod:null,
                 results: {
                     resultTable: [],
                     pageFaults: 0
@@ -150,10 +170,14 @@
                     case "opt":
                         this.calculateOpt();
                         break;
+                    case "clock":
+                        this.calculateClock();
+                        break;
                     default:
                         break;
 
                 }
+                this.resultsMethod=this.method;
 
 
             },
@@ -255,11 +279,65 @@
 
                         }
                     }
+
                     this.results.resultTable.push([...frames]);
                 }
                 this.results.pageFaults = pagesAdded.length;
                 this.results.replacement = replacement;
                 this.$forceUpdate();
+            },
+            calculateClock() {
+                let frames = {pages: [], pointer: 0};
+                let replacement = 0;
+                this.results.resultTable = [];
+                let pagesAdded = [];
+                for (let frame = 0; frame < this.nFrames; frame++) {
+                    frames.pages.push({value: null, reference: 0});
+                }
+
+                for (let page in this.pageList) {
+                    let currentPage = this.pageList[page];
+                    if (!this.inFrameClock(currentPage, frames)) {
+                        if (frames.pages[frames.pointer].value === null) {
+                            frames.pages[frames.pointer].value = currentPage;
+                            frames.pages[frames.pointer].reference = 1;
+                            pagesAdded.push(currentPage);
+                            frames.pointer = this.increaseClockPointer(frames.pointer);
+                        } else {
+                            /* eslint-disable no-constant-condition */
+                            while (true) {
+                                if (frames.pages[frames.pointer].reference === 1) {
+                                    frames.pages[frames.pointer].reference = 0;
+                                    frames.pointer = this.increaseClockPointer(frames.pointer);
+
+                                } else {
+                                    frames.pages[frames.pointer].value = currentPage;
+                                    frames.pages[frames.pointer].reference = 1;
+                                    frames.pointer = this.increaseClockPointer(frames.pointer);
+                                    break;
+
+                                }
+                            }
+                            replacement++;
+                            pagesAdded.push(currentPage);
+
+                        }
+                    } else {
+                        for (let frame in frames.pages) {
+                            if (frames.pages[frame].value === currentPage) {
+                                frames.pages[frame].reference = 1;
+                                break;
+                            }
+                        }
+                    }
+
+
+                    this.results.resultTable.push(lodashCloneDeep(frames));
+                }
+                this.results.pageFaults = pagesAdded.length;
+                this.results.replacement = replacement;
+                this.$forceUpdate();
+
             },
 
 
@@ -302,6 +380,15 @@
                     } else indexList.push(index);
                 }
                 return frames.lastIndexOf(this.pageList[Math.max(...indexList)]);
+            },
+            inFrameClock(currentPage, frames) {
+                for (let frame = 0; frame < this.nFrames; frame++) {
+                    if (frames.pages[frame].value === currentPage) return true;
+                }
+                return false;
+            },
+            increaseClockPointer(pointer) {
+                return (pointer + 1) % (this.nFrames)
             }
         }
     };

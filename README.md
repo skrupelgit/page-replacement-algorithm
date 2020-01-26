@@ -1,3 +1,3 @@
 # reemplazo
 
-Fifo LRU and Optimun
+Fifo, LRU, Optimum and clock
