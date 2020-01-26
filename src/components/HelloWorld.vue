@@ -1,6 +1,5 @@
 <template>
   <div class="container">
-  
     <div class="row">
       <div class="col-6">
         <div class="row">
@@ -27,25 +26,33 @@
           <div class="col-12">
             <label>
               Fifo
-
-            <input checked  class="form-control" type="radio" name="method" value="fifo">
+              <input checked class="form-control" type="radio" name="method" value="fifo" />
             </label>
-            <label>LRU
-
-            <input disabled class="form-control" type="radio" name="method" value="fifo">
+            <label>
+              LRU
+              <input disabled class="form-control" type="radio" name="method" value="fifo" />
             </label>
-            <label>Optimo
-
-            <input disabled class="form-control" type="radio" name="method" value="fifo">
+            <label>
+              Optimo
+              <input disabled class="form-control" type="radio" name="method" value="fifo" />
             </label>
-            <label>Reloj
-            <input disabled class="form-control" type="radio" name="method" value="fifo">
+            <label>
+              Reloj
+              <input disabled class="form-control" type="radio" name="method" value="fifo" />
             </label>
           </div>
         </div>
         <button class="btn btn-primary" @click="calculate">Calcular</button>
       </div>
-      <div v-if="pageList.length" class="col-6">
+      <div v-if="pageDescription.length" class="col-6">
+        <h4>Listado de páginas</h4>
+        <span v-for="(page,index) in pageDescription " :key="index">
+          <span
+            v-if="page"
+            :style="{backgroundColor:page.color}"
+            class="badge"
+          >{{page.value}}</span>
+        </span>
         <h4>Secuencia de páginas</h4>
         <span
           v-for="(page,index) in pageList "
@@ -79,8 +86,9 @@
           </tr>
         </table>
         <code>
-        Fallos de página : {{results.pageFaults}} <br>
-        Reemplazos : {{results.replacement}}
+          Fallos de página : {{results.pageFaults}}
+          <br />
+          Reemplazos : {{results.replacement}}
         </code>
       </div>
     </div>
@@ -131,7 +139,7 @@ export default {
     calculate() {
       this.generatePageList();
       let frames = [];
-      let replacement=0;
+      let replacement = 0;
       this.results.resultTable = [];
       let pagesAdded = [];
       for (let frame = 0; frame < this.nFrames; frame++) {
@@ -158,7 +166,7 @@ export default {
         this.results.resultTable.push([...frames]);
       }
       this.results.pageFaults = pagesAdded.length;
-      this.results.replacement=replacement;
+      this.results.replacement = replacement;
       this.$forceUpdate();
     },
     emptyFrames(frames) {
@@ -204,7 +212,7 @@ li {
 a {
   color: #42b983;
 }
-.badge{
-  margin:1px;
+.badge {
+  margin: 1px;
 }
 </style>
