@@ -1,3 +1,3 @@
 # reemplazo
 
-Just FIFO
+Fifo LRU and Optimun
